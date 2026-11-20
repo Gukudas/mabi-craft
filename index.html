@@ -43,7 +43,7 @@ main{max-width:860px;margin:0 auto;padding:1rem 16px 2rem}
 </head>
 <body>
 <main>
-  <div class="legend"><span><i class="g"></i>직접 제작 이득</span><span><i class="l"></i>직접 제작 손해</span></div>
+  <div class="legend"><span><i class="g"></i>직접 제작 이득</span><span><i class="l"></i>직접 제작 손해</span><span id="upd" style="margin-left:auto"></span></div>
   <div id="out"></div>
   <p class="src">시세 출처: <a href="https://open.mabimobi.life/docs">모비라이프 OpenAPI</a> · 아이콘: <a href="https://www.flaticon.com/kr/free-icon/blacksmith_12627369">the best icon – Flaticon</a></p>
 </main>
@@ -105,13 +105,17 @@ function render(data){
     const mk = cost(r, m), b = buy(n); return (mk!=null && b!=null) ? block(n, mk, b) : null; }).filter(Boolean);
   if (acc.length) sections.push(["악세서리", acc]);
 
+  if (data.fetched_at) {
+    const t = new Date(data.fetched_at), p = n => String(n).padStart(2, "0");
+    document.getElementById("upd").textContent = `${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())} 갱신`;
+  }
   if (sections.length)
     document.getElementById("out").innerHTML = sections.map(([t, items]) =>
       `<div class="sec">${t}</div><div class="grid">${items.join("")}</div>`).join("");
 }
 
 async function load(){
-  try { const r = await fetch(DATA_URL); if (r.ok) render(await r.json()); } catch (e) {}
+  try { const r = await fetch(`${DATA_URL}?t=${Date.now()}`, {cache:"no-store"}); if (r.ok) render(await r.json()); } catch (e) {}
 }
 load();
 setInterval(load, 60*1000);                       // 열어 둔 동안 1분마다 다시 확인
