@@ -114,7 +114,10 @@ async function load(){
   try { const r = await fetch(DATA_URL); if (r.ok) render(await r.json()); } catch (e) {}
 }
 load();
-setInterval(load, 5*60*1000);
+setInterval(load, 60*1000);                       // 열어 둔 동안 1분마다 다시 확인
+document.addEventListener("visibilitychange", () => {  // 앱으로 돌아오면 바로 다시 확인
+  if (document.visibilityState === "visible") load();
+});
 </script>
 </body>
 </html>
