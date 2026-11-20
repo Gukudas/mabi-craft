@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>해연</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="해연">
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --bg:#ffffff; --sub:#6b6b66;
+  --g-bg:#E6F1FB; --g-bd:#85B7EB; --g-ink:#0C447C;
+  --l-bg:#FCEBEB; --l-bd:#F09595; --l-ink:#791F1F;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1f1f1e; --sub:#a3a29c;
+  --g-bg:#0C447C; --g-bd:#378ADD; --g-ink:#E6F1FB;
+  --l-bg:#791F1F; --l-bd:#E24B4A; --l-ink:#FCEBEB;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:860px;margin:0 auto;padding:1rem 16px 2rem}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--sub)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;border:0.5px solid;vertical-align:-1px;margin-right:4px}
+.sec{font-size:14px;font-weight:500;color:var(--sub);margin:1.25rem 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.b{border-radius:8px;padding:10px 12px;border:0.5px solid}
+.g{background:var(--g-bg);border-color:var(--g-bd);color:var(--g-ink)}
+.l{background:var(--l-bg);border-color:var(--l-bd);color:var(--l-ink)}
+.n{font-size:13px;font-weight:500;word-break:keep-all}
+.s{font-size:12px;opacity:.85}
+.d{font-size:16px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums}
+.src{font-size:11px;color:var(--sub);margin-top:1.5rem}
+.src a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+  <div class="legend"><span><i class="g"></i>직접 제작 이득</span><span><i class="l"></i>직접 제작 손해</span></div>
+  <div id="out"></div>
+  <p class="src">시세 출처: <a href="https://open.mabimobi.life/docs">모비라이프 OpenAPI</a> · 아이콘: <a href="https://www.flaticon.com/kr/free-icon/blacksmith_12627369">the best icon – Flaticon</a></p>
+</main>
+<script>
+// ── 앱스 스크립트 웹 앱 주소 ──
+const DATA_URL = "https://script.google.com/macros/s/AKfycbwR1VSW93qtsqQ7nDBftGh0KGp6HfWHXFO2mj91RQlOX6zjUYV4QvM7QsyuCCSTIBGp/exec";
+
+// ── 무기 목록 (화면에 이 순서대로 나와요. 직업이 틀리면 여기만 고치세요) ──
+const WEAPONS = [
+  ["숏소드","전사"],["그레이트 소드","전사"],["론 엣지소드","전사"],["라이트 핼버드","전사"],
+  ["숏보우","궁수"],["라이트 크로스보우","궁수"],["라이트 롱보우","궁수"],
+  ["우드 완드","마법사"],["라운드헤드 케인","마법사"],["스노우 오브","마법사"],["라운드 코일","마법사"],
+  ["마블 힐링 완드","힐러"],["크리스탈 스태프","힐러"],["블런트 쿼터스태프","힐러"],["서펜트 의식용 단검","힐러"],
+  ["켈틱 류트","음유시인"],["커브드 하프","음유시인"],["꽃잎 접부채","음유시인"],
+  ["플랫 대거","도적"],["라이트 너클","도적"],["샤프 듀얼소드","도적"]
+];
+const CLASS_STONE = {전사:"포식",궁수:"포식",마법사:"심해",힐러:"심해",음유시인:"허상",도적:"허상"};
+const ARMORS = [["비늘 갑옷","중갑","비늘"],["가죽 갑옷","경갑","가죽"],["전투복","천","전투복"]];
+const PARTS = ["투구","상의","장갑","하의","신발"];
+const MAT_KEYS = ["망령","원념","야생","삼림","파동","공명","포식","심해","허상"];
+
+// ── 제작 레시피 ──
+function armorRecipe(part, t){
+  if(part==="투구") return {허상:8, 망령:40, [t==="중갑"?"삼림":"야생"]:35, [t==="중갑"?"파동":"공명"]:55};
+  if(part==="상의") return {포식:8, 원념:40, [t==="천"?"야생":"삼림"]:35, [t==="천"?"공명":"파동"]:55};
+  if(part==="장갑"||part==="신발") return {[{천:"심해",경갑:"포식",중갑:"허상"}[t]]:8, 망령:40, 야생:35, 삼림:35};
+  if(part==="하의") return {심해:8, 원념:40, [t==="경갑"?"야생":"삼림"]:35, [t==="천"?"파동":"공명"]:55};
+}
+const weaponRecipe = s => ({[s]:15, 망령:80, 야생:75, 파동:90});
+const RING = {허상:8, 원념:55, 야생:40, 공명:60};
+const NECKLACE = {포식:5, 심해:5, 망령:30, 원념:30, 삼림:50, 파동:75};
+
+const f = v => v.toLocaleString("ko-KR");
+const cost = (r, m) => Object.keys(r).every(k => m[k]!=null) ? Object.entries(r).reduce((s,[k,n])=>s+m[k]*n,0) : null;
+const block = (name, make, buy) => {
+  const d = buy - make, g = d >= 0;
+  return `<div class="b ${g?"g":"l"}"><div class="n">${name}</div><div class="s">제작 ${f(make)} · 구매 ${f(buy)}</div><div class="d">${g?"+":"−"}${f(Math.abs(d))}</div></div>`;
+};
+
+function render(data){
+  const m = {};
+  for (const [n,v] of Object.entries(data.materials||{})){
+    const k = MAT_KEYS.find(k => n===`${k}의 영혼석` || n===`${k}의 마력석`);
+    if (k && v.price!=null) m[k] = v.price;
+  }
+  const buy = n => data.gear?.[`해연의 ${n}ZZ`]?.price ?? null;
+  const sections = [];
+
+  const weapons = WEAPONS.map(([w, cls]) => {
+    const mk = cost(weaponRecipe(CLASS_STONE[cls]), m), b = buy(w);
+    return (mk!=null && b!=null) ? block(w, mk, b) : null; }).filter(Boolean);
+  if (weapons.length) sections.push(["무기", weapons]);
+  for (const [prefix, type, short] of ARMORS){
+    const items = PARTS.map(p => { const mk = cost(armorRecipe(p,type), m), b = buy(`${prefix} ${p}`);
+      return (mk!=null && b!=null) ? block(p, mk, b) : null; }).filter(Boolean);
+    if (items.length) sections.push([`방어구 · ${type} (${short})`, items]);
+  }
+  const acc = [["페리도트 링",RING],["페리도트 네크리스",NECKLACE]].map(([n,r]) => {
+    const mk = cost(r, m), b = buy(n); return (mk!=null && b!=null) ? block(n, mk, b) : null; }).filter(Boolean);
+  if (acc.length) sections.push(["악세서리", acc]);
+
+  if (sections.length)
+    document.getElementById("out").innerHTML = sections.map(([t, items]) =>
+      `<div class="sec">${t}</div><div class="grid">${items.join("")}</div>`).join("");
+}
+
+async function load(){
+  try { const r = await fetch(DATA_URL); if (r.ok) render(await r.json()); } catch (e) {}
+}
+load();
+setInterval(load, 5*60*1000);
+</script>
+</body>
+</html>
